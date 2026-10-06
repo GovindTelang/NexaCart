@@ -11,7 +11,10 @@ import com.govind.ecommerce.repo.ProductRepository;
 import com.govind.ecommerce.repo.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import com.govind.ecommerce.model.Cart;
+import com.govind.ecommerce.model.CartItem;
+import com.govind.ecommerce.repo.CartRepository;
+import org.springframework.transaction.annotation.Transactional;
 import java.net.Inet4Address;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -19,6 +22,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class OrderService {
+
+    @Autowired
+    private CartRepository cartRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -83,14 +89,98 @@ public class OrderService {
         );
     }
 
-    public List<OrderDTO> getOrderByUser(Long userId) {
-        Optional<User> userOp = userRepository.findById(userId);
-        if(userOp.isEmpty())
-        {
-            throw  new RuntimeException("user not found");
+    @Transactional
+    public OrderDTO checkout(String email) {
+
+        User user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new RuntimeException("User not found");
         }
-        User user= userOp.get();
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Cart not found"));
+
+        if (cart.getItems().isEmpty()) {
+            throw new RuntimeException("Cart is empty");
+        }
+
+        Orders order = new Orders();
+        order.setUser(user);
+        order.setOrderDate(new Date());
+        order.setStatus("Pending");
+
+        List<OrderItem> orderItems = new ArrayList<>();
+        List<OrderItemDTO> orderItemDTOs = new ArrayList<>();
+
+        double totalAmount = 0.0;
+
+        for (CartItem cartItem : cart.getItems()) {
+
+            Product product = cartItem.getProduct();
+            int quantity = cartItem.getQuantity();
+
+            if (quantity <= 0) {
+                throw new RuntimeException("Invalid quantity");
+            }
+
+            if (quantity > product.getStockQuantity()) {
+                throw new RuntimeException(
+                        "Insufficient stock for " + product.getName()
+                );
+            }
+
+            totalAmount += product.getPrice() * quantity;
+
+            product.setStockQuantity(
+                    product.getStockQuantity() - quantity
+            );
+
+            OrderItem orderItem = new OrderItem();
+            orderItem.setOrder(order);
+            orderItem.setProduct(product);
+            orderItem.setQuantity(quantity);
+
+            orderItems.add(orderItem);
+
+            orderItemDTOs.add(
+                    new OrderItemDTO(
+                            product.getName(),
+                            product.getPrice(),
+                            quantity
+                    )
+            );
+        }
+
+        order.setTotalAmount(totalAmount);
+        order.setOrderItems(orderItems);
+
+        Orders savedOrder = orderRepository.save(order);
+
+        cart.getItems().clear();
+        cartRepository.save(cart);
+
+        return new OrderDTO(
+                savedOrder.getId(),
+                savedOrder.getTotalAmount(),
+                savedOrder.getStatus(),
+                savedOrder.getOrderDate(),
+                orderItemDTOs
+        );
+    }
+
+    public List<OrderDTO> getOrdersByUser(String email) {
+
+        User user = userRepository.findByEmail(email);
+
+        if (user == null) {
+            throw new RuntimeException("User not found");
+        }
+
         List<Orders> ordersList = orderRepository.findByUser(user);
-        return ordersList.stream().map(this::convertToDTO).collect(Collectors.toList());
+
+        return ordersList.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
     }
 }

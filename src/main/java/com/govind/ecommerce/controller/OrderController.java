@@ -1,11 +1,8 @@
 package com.govind.ecommerce.controller;
 
 import com.govind.ecommerce.dto.OrderDTO;
-import com.govind.ecommerce.model.OrderItem;
-import com.govind.ecommerce.model.OrderRequest;
 import com.govind.ecommerce.service.OrderService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.annotation.Order;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,23 +12,36 @@ import java.util.List;
 @CrossOrigin("*")
 public class OrderController {
 
-    @Autowired
-    private OrderService orderService;
-    @PostMapping("/place/{userId}")
-    public OrderDTO placeOrder(@PathVariable Long userId, @RequestBody OrderRequest orderRequest)
-    {
-        return orderService.placeOrder(userId,orderRequest.getProductQuantities(),orderRequest.getTotalAmount());
+    private final OrderService orderService;
+
+    public OrderController(OrderService orderService) {
+        this.orderService = orderService;
+    }
+
+    @PostMapping("/checkout")
+    public OrderDTO checkout() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        return orderService.checkout(email);
     }
 
     @GetMapping("/all-orders")
-    public List<OrderDTO> getAllOrders()
-    {
+    public List<OrderDTO> getAllOrders() {
         return orderService.getAllOrders();
     }
 
-    @GetMapping("/user/{userId}")
-    public List<OrderDTO> getOrderByUser(@PathVariable Long userId)
-    {
-        return orderService.getOrderByUser(userId);
+    @GetMapping("/my-orders")
+    public List<OrderDTO> getMyOrders() {
+
+        String email = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getName();
+
+        return orderService.getOrdersByUser(email);
     }
 }
