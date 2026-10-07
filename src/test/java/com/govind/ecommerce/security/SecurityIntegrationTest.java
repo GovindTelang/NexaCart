@@ -8,14 +8,13 @@ import com.govind.ecommerce.service.OrderService;
 import com.govind.ecommerce.service.ProductService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Page;
-import org.springframework.http.MediaType;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -136,13 +135,16 @@ class SecurityIntegrationTest {
     }
 
     @Test
-    void requestWithoutTokenShouldBeRejected() throws Exception {
+    void requestWithoutTokenShouldBeAllowedForProducts() throws Exception {
+
+        when(productService.getAllProducts(any()))
+                .thenReturn(Page.empty());
 
         mockMvc.perform(
                 get("/products")
         )
-        .andExpect(status().isForbidden());
+        .andExpect(status().isOk());
 
-        verifyNoInteractions(productService);
+        verify(productService).getAllProducts(any());
     }
 }

@@ -43,7 +43,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/products/**")
-                        .hasAnyRole("USER", "ADMIN")
+                        .permitAll()
 
                         .requestMatchers(HttpMethod.POST, "/products/**")
                         .hasRole("ADMIN")
@@ -59,7 +59,7 @@ public class SecurityConfig {
 
                         .requestMatchers(HttpMethod.GET, "/orders/my-orders")
                         .hasAnyRole("USER", "ADMIN")
-                        
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
