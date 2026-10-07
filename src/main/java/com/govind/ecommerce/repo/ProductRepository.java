@@ -19,4 +19,24 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             @Param("category") String category,
             Pageable pageable
     );
+
+    @Query("""
+            SELECT p FROM Product p
+            ORDER BY
+                CASE LOWER(p.category)
+                    WHEN 'fashion' THEN 0
+                    WHEN 'electronics' THEN 1
+                    WHEN 'home & kitchen' THEN 2
+                    WHEN 'books' THEN 3
+                    WHEN 'beauty' THEN 4
+                    WHEN 'office & study' THEN 5
+                    WHEN 'gaming' THEN 6
+                    WHEN 'sports' THEN 7
+                    WHEN 'sports & fitness' THEN 7
+                    WHEN 'grocery' THEN 8
+                    ELSE 9
+                END,
+                p.id ASC
+            """)
+    Page<Product> findStorefrontProducts(Pageable pageable);
 }

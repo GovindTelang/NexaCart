@@ -108,7 +108,7 @@ public class OrderService {
         Orders order = new Orders();
         order.setUser(user);
         order.setOrderDate(new Date());
-        order.setStatus("Pending");
+        order.setStatus("PAID");
 
         List<OrderItem> orderItems = new ArrayList<>();
         List<OrderItemDTO> orderItemDTOs = new ArrayList<>();

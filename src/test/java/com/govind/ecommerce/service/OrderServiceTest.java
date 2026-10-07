@@ -124,7 +124,7 @@ class OrderServiceTest {
                 0.001
         );
 
-        assertEquals("Pending", result.getStatus());
+        assertEquals("PAID", result.getStatus());
 
         assertEquals(
                 8,
